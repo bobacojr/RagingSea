@@ -10,7 +10,7 @@ uniform float uSmallWavesIterations;
 
 varying float vElevation;
 varying vec3 vNormal; // Add this
-varying vec3 vPosition;
+varying vec3 vWorldPosition;
 
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson (https://github.com/stegu/webgl-noise)
@@ -102,24 +102,33 @@ float computeElevation(vec3 pos) {
 
 void main() 
 {
+    // Calculate position and elevation
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-    
-    // Elevation
     float elevation = computeElevation(modelPosition.xyz);
     modelPosition.y += elevation;
-
-    // Calculate normals
+    
+    // Store world position for lighting calculations
+    vWorldPosition = modelPosition.xyz;
+    
+    // Calculate normals using finite differences
     float offset = 0.01;
-    vec3 posRight = modelPosition.xyz + vec3(offset, 0.0, 0.0);
-    vec3 posForward = modelPosition.xyz + vec3(0.0, 0.0, offset);
+    vec3 posRight = vec3(modelPosition.x + offset, modelPosition.y, modelPosition.z);
+    vec3 posForward = vec3(modelPosition.x, modelPosition.y, modelPosition.z + offset);
+    
     float elevationRight = computeElevation(posRight);
     float elevationForward = computeElevation(posForward);
     
-    vec3 tangent = vec3(1.0, elevationRight - elevation, 0.0);
-    vec3 bitangent = vec3(0.0, elevationForward - elevation, 1.0);
-    vNormal = normalize(cross(tangent, bitangent));
-    vNormal = normalize(normalMatrix * vNormal); // Transform to world space
-
-    gl_Position = projectionMatrix * viewMatrix * modelPosition;
+    // Adjust elevations by the main elevation
+    elevationRight += modelPosition.y - elevation;
+    elevationForward += modelPosition.y - elevation;
+    
+    vec3 tangent = vec3(offset, elevationRight - modelPosition.y, 0.0);
+    vec3 bitangent = vec3(0.0, elevationForward - modelPosition.y, offset);
+    
+    // Calculate and transform normal
+    vNormal = normalize(normalMatrix * cross(tangent, bitangent));
     vElevation = elevation;
+    
+    // Final position
+    gl_Position = projectionMatrix * viewMatrix * modelPosition;
 }

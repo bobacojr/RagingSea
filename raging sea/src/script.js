@@ -50,9 +50,10 @@ const waterMaterial = new THREE.ShaderMaterial({
         // New Phong lighting uniforms
         uLightPosition: { value: new THREE.Vector3(-10, -10, -10) },
         uLightColor: { value: new THREE.Color(0xffffff) },
-        uAmbientLight: { value: new THREE.Color(0x333333) },
+        uAmbientLight: { value: new THREE.Color(0xf2f3f5) },
         uLightIntensity: { value: 1.0 },
-        uShininess: { value: 32.0 }
+        uShininess: { value: 32.0 },
+        uCameraPosition: { value: new THREE.Vector3() }
     }
 });
 
@@ -151,6 +152,7 @@ const clock = new THREE.Clock()
 
 const tick = () =>
 {
+    waterMaterial.uniforms.uCameraPosition.value.copy(camera.position);
     const elapsedTime = clock.getElapsedTime()
 
     // Update water
